@@ -1,0 +1,20 @@
+{
+  "app_name": "SAR VOC",
+  "languages": ["ar", "fr", "en"],
+  "brand": "V",
+  "coins": {"usd_to_coins": 3500000},
+  "agent_recharge": {"usd_to_coins": 3000000},
+  "usdt": {
+    "network": "BSC/BEP20",
+    "address": "0xefb1b6f3496c6b2a90d6ad80de88139eeb00769a",
+    "binance_id": "1241487807",
+    "txid_required": true
+  },
+  "levels": {"min": 1, "max": 100, "level_1_xp": 100, "xp_per_gift": 50, "progression": "balanced"},
+  "vip": {"vip1_usd": 200, "doubling": true, "max_vip": 13, "svip13_usd": 100000},
+  "gift_price_min_coins": 100000,
+  "gift_price_max_coins": 10000000,
+  "gift_count": 20,
+  "room_country_filter": true,
+  "do_not_modify_old_project": true
+}

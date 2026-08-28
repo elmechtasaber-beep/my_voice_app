@@ -1,0 +1,55 @@
+#:import FruitGamePanel fruit_game_panel.FruitGamePanel
+
+<ParticipantItem@BoxLayout>:
+    size_hint_y: None
+    height: "50dp"
+    padding: "8dp"
+    participant_name: ""
+
+    Label:
+        text: f"🎙️ {root.participant_name}"
+        halign: "left"
+        valign: "middle"
+        text_size: self.size
+
+
+<VoiceRoomScreen>:
+    BoxLayout:
+        orientation: "vertical"
+        padding: "15dp"
+        spacing: "10dp"
+
+        Label:
+            id: room_status_label
+            text: "الغرفة"
+            font_size: "20sp"
+            bold: True
+            size_hint_y: None
+            height: "40dp"
+
+        FruitGamePanel:
+            id: fruit_game
+
+        RecycleView:
+            id: participants_rv
+            viewclass: "ParticipantItem"
+            RecycleBoxLayout:
+                default_size: None, dp(50)
+                default_size_hint: 1, None
+                size_hint_y: None
+                height: self.minimum_height
+                orientation: "vertical"
+
+        BoxLayout:
+            size_hint_y: None
+            height: "60dp"
+            spacing: "10dp"
+
+            Button:
+                id: mute_button
+                text: "🎤 مفعّل"
+                on_release: root.toggle_mute()
+
+            Button:
+                text: "خروج من الغرفة"
+                on_release: root.leave_channel()

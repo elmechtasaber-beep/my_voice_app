@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SAR VOC — فاكهة الحظ</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#090604;color:#fff;font-family:Tahoma,Arial,sans-serif}.game{max-width:900px;margin:auto;min-height:100vh;padding:10px;background:radial-gradient(circle at top,#51280a,#090504 55%);border:3px solid #8b4b08}.top{display:flex;align-items:center;gap:8px}.top button{border:2px solid #d99b23;background:#4d2b06;color:#ffd968;border-radius:50%;width:42px;height:42px;font-size:20px}.roundbox{flex:1;text-align:center;color:#ffd866;font-weight:bold}.title{text-align:center;margin:8px 0;padding:10px;font-size:30px;font-weight:900;color:#ffe06b;background:linear-gradient(#a82d08,#3d0904);border:3px solid #e9a11b;border-radius:16px}.balance{text-align:center;color:#ffd866;font-size:18px;margin:8px}.timer{margin:auto;text-align:center;font-size:42px;color:#fff62b;background:#090606;border:3px solid #a96712;border-radius:18px;max-width:290px;padding:3px}.hint{text-align:center;color:#e7c98a;margin:9px 0 5px}.fruits{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;margin-top:8px}.fruit{background:#160a06;border:2px solid #9d4c12;border-radius:12px;text-align:center;padding:7px 2px;cursor:pointer;transition:.12s}.fruit.selected{outline:3px solid #a45cff;transform:scale(1.02)}.icon{font-size:32px}.mult{color:#ffe56f;font-weight:bold;font-size:17px}.reward{display:block;background:#236b15;border-radius:10px;font-size:12px;padding:4px 2px;margin-top:4px}.mybet{display:block;color:#fff;margin-top:5px;font-size:12px;min-height:16px}.bet-title{text-align:center;color:#e7c98a;margin:13px 0 7px}.bets{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;direction:ltr}.bet{width:100%;height:58px;border-radius:50%;border:2px solid #d99318;background:#3a2207;color:white;font-weight:bold;font-size:17px;cursor:pointer}.bet.active{outline:3px solid #a45cff}.msg{min-height:25px;text-align:center;color:#ffd768;margin:10px}.history{margin-top:12px;border-top:1px solid #63340d;padding-top:8px}.history-head{display:flex;justify-content:space-between;align-items:center}.history h3{margin:5px;color:#f0ca73}.clear{border:1px solid #63340d;background:#160b06;color:#ffcf6a;border-radius:9px;padding:6px 10px}.row{display:flex;justify-content:space-between;border-bottom:1px solid #2d1809;padding:7px;font-size:13px}.footer{display:flex;gap:7px;margin-top:10px}.footer button{flex:1;padding:10px;background:#160b06;color:#fff;border:1px solid #805018;border-radius:10px}
+@media(max-width:620px){.fruits{grid-template-columns:repeat(8,minmax(0,1fr));gap:3px}.fruit{padding:5px 1px;border-radius:9px}.icon{font-size:24px}.mult{font-size:13px}.reward{font-size:10px;padding:3px 1px}.mybet{font-size:9px}.bet{height:54px;font-size:15px}}
+</style></head>
+<body><div class="game">
+<div class="top"><button onclick="back()" title="العودة">↩</button><div class="roundbox">الجولة <span id="round">1336</span></div><button onclick="showHistory()" title="السجل">#</button><button onclick="closeGame()" title="نزع اللعبة">×</button></div>
+<div class="title">فاكهة الحظ</div><div class="balance">رصيدك: <b id="balance">1,000,000</b> Coins</div><div class="timer" id="timer">00:30</div>
+<div class="hint">الوقت 30 ثانية — بعد انتهاء الجولة تبدأ الجولة التالية تلقائيًا</div>
+<div class="fruits" id="fruits"></div>
+<div class="bet-title">اختر مبلغ الرهان ثم اضغط على الفاكهة مباشرة</div><div class="bets"><button class="bet" data-bet="1000">1K</button><button class="bet" data-bet="10000">10K</button><button class="bet" data-bet="1000000">1M</button><button class="bet" data-bet="10000000">10M</button></div>
+<div class="msg" id="msg">اختر مبلغ الرهان ثم اضغط على الفاكهة لوضع الرهان</div>
+<div class="history"><div class="history-head"><h3>📜 سجل الجولات</h3><button class="clear" onclick="clearHistory()">مسح السجل</button></div><div id="history"></div></div>
+<div class="footer"><button onclick="back()">↩ العودة للغرفة</button><button onclick="download()">⇩ تنزيل اللعبة</button></div>
+</div>
+<script>
+const fruits=[['🍓','×45','45,000'],['🥭','×25','12,500'],['🍉','×15','7,500'],['🍎','×10','7,500'],['🍒','×5','5,500'],['🍇','×5','2,500'],['🍊','×5','2,500'],['🍋','×5','2,500']];
+let balance=1000000,selected=-1,seconds=30,round=1336,history=[],betsByFruit=Array(fruits.length).fill(0);
+const fruitsEl=document.getElementById('fruits');
+fruitsEl.innerHTML=fruits.map((f,i)=>`<div class="fruit" data-i="${i}"><div class="icon">${f[0]}</div><div class="mult">${f[1]}</div><span class="reward">${f[2]}</span><span class="mybet" id="mybet-${i}"></span></div>`).join('');
+let selectedBet=1000;
+document.querySelectorAll('.bet').forEach(b=>b.onclick=()=>{selectedBet=+b.dataset.bet;document.querySelectorAll('.bet').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById('msg').textContent='الرهان '+selectedBet.toLocaleString()+' — اضغط على الفاكهة لوضعه مباشرة';});
+fruitsEl.querySelectorAll('.fruit').forEach(el=>el.onclick=()=>placeBetOnFruit(+el.dataset.i));
+function show(){document.getElementById('balance').textContent=balance.toLocaleString();betsByFruit.forEach((v,i)=>document.getElementById('mybet-'+i).textContent=v?'رهانك: '+v.toLocaleString():'');}
+function placeBetOnFruit(index){selected=index;fruitsEl.querySelectorAll('.fruit').forEach(x=>x.classList.remove('selected'));fruitsEl.querySelector('[data-i=\"'+index+'\"]').classList.add('selected');const amount=selectedBet;if(balance<amount){document.getElementById('msg').textContent='⚠️ رصيدك غير كافٍ، يرجى إعادة الشحن';return}balance-=amount;betsByFruit[index]+=amount;history.unshift('الجولة '+round+' — '+fruits[index][0]+' — رهان '+amount.toLocaleString());history=history.slice(0,10);renderHistory();show();document.getElementById('msg').textContent='✅ تم وضع رهان '+amount.toLocaleString()+' على '+fruits[index][0];}
+function finish(){round++;let f=fruits[Math.floor(Math.random()*fruits.length)];let winners=[];betsByFruit.forEach((v,i)=>{if(v&&i===fruits.indexOf(f)) {let win=Math.round(v*parseInt(f[1].slice(1)));balance+=win;winners.push('ربح '+win.toLocaleString());}});let result='الجولة '+round+' — '+f[0]+' '+f[1]+(winners.length?' — '+winners.join('، '):'');history.unshift(result);history=history.slice(0,10);renderHistory();document.getElementById('msg').textContent='انتهت الجولة: '+f[0]+' '+f[1];betsByFruit=Array(fruits.length).fill(0);selected=-1;fruitsEl.querySelectorAll('.fruit').forEach(x=>x.classList.remove('selected'));show();document.getElementById('round').textContent=round;seconds=30;}
+setInterval(()=>{seconds--;if(seconds<=0)finish();document.getElementById('timer').textContent='00:'+String(seconds).padStart(2,'0')},1000);
+function renderHistory(){document.getElementById('history').innerHTML=history.map(x=>'<div class="row">'+x+'</div>').join('');}
+function showHistory(){document.querySelector('.history').scrollIntoView({behavior:'smooth'});}
+function clearHistory(){history=[];renderHistory();}
+function back(){alert('العودة للغرفة — الربط الحقيقي بالسرفر يتم لاحقًا.');}
+function closeGame(){if(confirm('نزع لعبة فاكهة الحظ من الغرفة؟'))alert('تمت إزالة اللعبة من العرض (نسخة تجريبية).');}
+function download(){const blob=new Blob([document.documentElement.outerHTML],{type:'text/html'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='SAR_VOC_Fruit_Game_Test.html';a.click();URL.revokeObjectURL(a.href);}
+show();
+</script></body></html>

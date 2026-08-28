@@ -1,0 +1,127 @@
+<WalletScreen>:
+    BoxLayout:
+        orientation: "vertical"
+        padding: "14dp"
+        spacing: "9dp"
+        canvas.before:
+            Color:
+                rgba: .965, .965, .975, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        Label:
+            text: "USDT — الشحن"
+            font_size: "23sp"
+            bold: True
+            color: .08,.08,.1,1
+            size_hint_y: None
+            height: "45dp"
+        Label:
+            id: balance_label
+            text: "🪙 0"
+            font_size: "22sp"
+            color: .45,.28,.85,1
+            size_hint_y: None
+            height: "40dp"
+        Label:
+            text: "اختر باقة الكوينز"
+            font_size: "15sp"
+            bold: True
+            color: .12,.12,.14,1
+            size_hint_y: None
+            height: "30dp"
+        Label:
+            id: package_label
+            text: "لم يتم اختيار باقة"
+            color: .35,.35,.38,1
+            size_hint_y: None
+            height: "30dp"
+        BoxLayout:
+            size_hint_y: None
+            height: "58dp"
+            spacing: "5dp"
+            Button:
+                text: "$1\n3.5M"
+                on_release: root.choose_package(1, 3500000)
+            Button:
+                text: "$10\n35M"
+                on_release: root.choose_package(10, 35000000)
+            Button:
+                text: "$43\n150.5M"
+                on_release: root.choose_package(43, 150500000)
+            Button:
+                text: "$215\n752.5M"
+                on_release: root.choose_package(215, 752500000)
+        Button:
+            text: "$1000\n3.5B"
+            size_hint_y: None
+            height: "58dp"
+            on_release: root.choose_package(1000, 3500000000)
+        Label:
+            text: "طريقة الدفع: USDT فقط • شبكة BNB Smart Chain (BEP20)"
+            font_size: "13sp"
+            bold: True
+            color: .12,.12,.14,1
+            size_hint_y: None
+            height: "35dp"
+        Image:
+            source: "usdt_qr.jpg"
+            allow_stretch: True
+            keep_ratio: True
+        Label:
+            text: "عنوان الإيداع"
+            font_size: "13sp"
+            bold: True
+            color: .25,.25,.28,1
+            size_hint_y: None
+            height: "24dp"
+        Label:
+            text: "0xefb1b6f3496c6b2a90d6ad80de88139eeb00769a"
+            font_size: "11sp"
+            color: .08,.08,.1,1
+            text_size: self.size
+            halign: "center"
+            valign: "middle"
+            size_hint_y: None
+            height: "38dp"
+        Label:
+            text: "Binance ID: 1241487807"
+            font_size: "12sp"
+            color: .25,.25,.28,1
+            size_hint_y: None
+            height: "28dp"
+        BoxLayout:
+            size_hint_y: None
+            height: "48dp"
+            spacing: "7dp"
+            Button:
+                text: "نسخ العنوان"
+                on_release: root.copy_usdt_address()
+            Button:
+                text: "حفظ ومشاركة العنوان"
+                on_release: root.copy_usdt_address()
+        Button:
+            text: "إرسال TXID بعد الدفع"
+            size_hint_y: None
+            height: "50dp"
+            on_release: root.create_recharge_request()
+        Button:
+            text: "👤 وكيل شحن"
+            size_hint_y: None
+            height: "50dp"
+            on_release: root.show_agent_info()
+        Button:
+            text: "📜 سجل العمليات"
+            size_hint_y: None
+            height: "48dp"
+            on_release: root.show_history()
+        Label:
+            id: status_label
+            text: ""
+            text_size: self.size
+            halign: "center"
+        Button:
+            text: "🔙 العودة"
+            size_hint_y: None
+            height: "45dp"
+            on_release: app.root.current = "rooms"

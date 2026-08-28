@@ -1,0 +1,81 @@
+<RoomItem@BoxLayout>:
+    orientation: "horizontal"
+    size_hint_y: None
+    height: "70dp"
+    padding: "10dp"
+    spacing: "10dp"
+    room_name: ""
+    participant_count: 0
+    room_data: {}
+
+    canvas.before:
+        Color:
+            rgba: 0.15, 0.15, 0.18, 1
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [12]
+
+    BoxLayout:
+        orientation: "vertical"
+        Label:
+            text: root.room_name
+            font_size: "18sp"
+            halign: "left"
+            valign: "middle"
+            text_size: self.size
+            bold: True
+        Label:
+            text: f"👤 {root.participant_count} مشارك"
+            font_size: "13sp"
+            halign: "left"
+            valign: "middle"
+            text_size: self.size
+            color: 0.7, 0.7, 0.7, 1
+
+    Button:
+        text: "دخول"
+        size_hint_x: None
+        width: "90dp"
+        on_release: app.root.get_screen("rooms").join_room(root.room_data)
+
+
+<RoomsScreen>:
+    BoxLayout:
+        orientation: "vertical"
+        padding: "10dp"
+        spacing: "10dp"
+
+        BoxLayout:
+            size_hint_y: None
+            height: "50dp"
+            Label:
+                text: "الغرف الصوتية"
+                font_size: "22sp"
+                bold: True
+            Button:
+                text: "+ غرفة جديدة"
+                size_hint_x: None
+                width: "150dp"
+                on_release: root.open_create_room_popup()
+            Button:
+                text: "🪙 المحفظة"
+                size_hint_x: None
+                width: "120dp"
+                on_release: app.root.current = "wallet"
+            Button:
+                text: "خروج"
+                size_hint_x: None
+                width: "80dp"
+                on_release: root.leave_to_login()
+
+        RecycleView:
+            id: rooms_rv
+            viewclass: "RoomItem"
+            RecycleBoxLayout:
+                default_size: None, dp(70)
+                default_size_hint: 1, None
+                size_hint_y: None
+                height: self.minimum_height
+                orientation: "vertical"
+                spacing: "8dp"

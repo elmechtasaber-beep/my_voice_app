@@ -1,0 +1,48 @@
+<LoginScreen>:
+    email_input: email_field
+    password_input: password_field
+
+    BoxLayout:
+        orientation: "vertical"
+        padding: "30dp"
+        spacing: "15dp"
+
+        Widget:
+            size_hint_y: 0.3
+
+        Label:
+            text: "تسجيل الدخول"
+            font_size: "26sp"
+            bold: True
+            size_hint_y: None
+            height: "50dp"
+
+        TextInput:
+            id: email_field
+            hint_text: "الإيميل"
+            multiline: False
+            size_hint_y: None
+            height: "45dp"
+
+        TextInput:
+            id: password_field
+            hint_text: "كلمة السر"
+            password: True
+            multiline: False
+            size_hint_y: None
+            height: "45dp"
+
+        Button:
+            text: "دخول"
+            size_hint_y: None
+            height: "45dp"
+            on_release: root.login(email_field.text, password_field.text)
+
+        Button:
+            text: "إنشاء حساب جديد"
+            size_hint_y: None
+            height: "45dp"
+            on_release: root.sign_up(email_field.text, password_field.text)
+
+        Widget:
+            size_hint_y: 0.4

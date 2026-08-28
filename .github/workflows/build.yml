@@ -1,0 +1,40 @@
+name: Build SAR VOC Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build clean debug APK
+        run: |
+          set -e
+          docker pull kivy/buildozer:latest
+          docker run --rm --entrypoint /bin/sh \
+            -v "${{ github.workspace }}:/home/user/hostcwd" \
+            -w /home/user/hostcwd \
+            kivy/buildozer:latest -c '
+              set -e
+              buildozer android clean || true
+              buildozer android update
+              buildozer android debug
+            '
+
+      - name: Verify APK
+        run: |
+          set -e
+          test -n "$(find bin -maxdepth 1 -type f -name "*.apk" -print -quit)"
+          ls -lah bin/
+
+      - name: Upload SAR VOC APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: sar-voc-apk
+          path: bin/*.apk
+          if-no-files-found: error
