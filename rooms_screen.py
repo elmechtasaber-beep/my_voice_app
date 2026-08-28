@@ -87,7 +87,7 @@ class RoomsScreen(Screen):
             return
         voice_screen = self.manager.get_screen("voice_room")
         room_id = room_data["id"]
-        channel_name = f"room_{str(room_id).replace("-", "")}"
+        channel_name = f"room_{str(room_id).replace('-', '')}"
         voice_screen.join_channel(channel_name=channel_name, room_id=room_id)
         self.manager.current = "voice_room"
 
