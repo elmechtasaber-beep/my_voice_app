@@ -1,26 +1,11 @@
-import os
-import sys
 import traceback
 
 from kivy.app import App
+from kivy.uix.scrollview import ScrollView
+from kivy.uix.label import Label
 
 
-def _write_crash_log(exc):
-    try:
-        from kivy.app import App as _App
-        app = _App.get_running_app()
-        base = app.user_data_dir if app else "/sdcard"
-    except Exception:
-        base = "/sdcard"
-    try:
-        path = os.path.join(base, "crash_log.txt")
-        with open(path, "w") as f:
-            f.write(traceback.format_exc())
-    except Exception:
-        pass
-
-
-try:
+def _run_real_app():
     from kivy.lang import Builder
     from kivy.uix.screenmanager import ScreenManager, FadeTransition
 
@@ -44,9 +29,31 @@ try:
             sm.current = "login"
             return sm
 
-    if __name__ == "__main__":
-        SARVOCApp().run()
+    SARVOCApp().run()
 
-except Exception as e:
-    _write_crash_log(e)
-    raise
+
+class CrashDisplayApp(App):
+    def __init__(self, error_text, **kwargs):
+        super().__init__(**kwargs)
+        self.error_text = error_text
+
+    def build(self):
+        scroll = ScrollView()
+        label = Label(
+            text=self.error_text,
+            size_hint_y=None,
+            text_size=(700, None),
+            halign="left",
+            valign="top",
+        )
+        label.bind(texture_size=lambda inst, val: setattr(label, "height", val[1]))
+        scroll.add_widget(label)
+        return scroll
+
+
+if __name__ == "__main__":
+    try:
+        _run_real_app()
+    except Exception:
+        error_text = traceback.format_exc()
+        CrashDisplayApp(error_text).run()
