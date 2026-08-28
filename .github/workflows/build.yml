@@ -8,33 +8,26 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      PIP_CONSTRAINT: /tmp/pip-constraint.txt
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build clean debug APK
-        run: |
-          set -e
-          docker pull kivy/buildozer:latest
-          docker run --rm --entrypoint /bin/sh \
-            -v "${{ github.workspace }}:/home/user/hostcwd" \
-            -w /home/user/hostcwd \
-            kivy/buildozer:latest -c '
-              set -e
-              buildozer android clean || true
-              buildozer android update
-              buildozer android debug
-            '
-
-      - name: Verify APK
-        run: |
-          set -e
-          test -n "$(find bin -maxdepth 1 -type f -name "*.apk" -print -quit)"
-          ls -lah bin/
-
-      - name: Upload SAR VOC APK
-        uses: actions/upload-artifact@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          name: sar-voc-apk
-          path: bin/*.apk
-          if-no-files-found: error
+          python-version: '3.11'
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Prepare build tools
+        run: |
+          set -e
+          echo "cython<3" > /tmp/pip-constraint.txt
+          python -m pip install "pip==24.0"
+          pip install "cython<3"
