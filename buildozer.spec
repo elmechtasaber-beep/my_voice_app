@@ -7,7 +7,7 @@ source.include_exts = py,png,jpg,jpeg,kv,atlas,json,html,css,txt
 source.exclude_dirs = .buildozer,bin,__pycache__,backend,Profile,Games,VoiceRooms
 source.exclude_patterns = *.pyc,*.md,*.sql
 version = 1.0
-requirements = python3==3.11.9,hostpython3==3.11.9,kivy==2.3.1,supabase==2.27.0,pyjnius==1.7.0
+requirements = python3==3.11.9,hostpython3==3.11.9,kivy==2.3.1,supabase==2.27.0,postgrest,gotrue,realtime,storage3,httpx,websockets,pyjnius==1.7.0
 presplash.filename = %(source.dir)s/presplash.png
 icon.filename = %(source.dir)s/icon.png
 orientation = portrait
