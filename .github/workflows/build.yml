@@ -28,7 +28,7 @@ jobs:
       - name: Prepare build tools
         run: |
           set -e
-          echo "cython<3" > /tmp/pip-constraint.txt
+          printf "cython<3\npip==24.0\n" > /tmp/pip-constraint.txt
           python -m pip install "pip==24.0"
           pip install "cython<3"
           pip install buildozer
