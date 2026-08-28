@@ -31,3 +31,23 @@ jobs:
           echo "cython<3" > /tmp/pip-constraint.txt
           python -m pip install "pip==24.0"
           pip install "cython<3"
+          pip install buildozer
+
+      - name: Build clean debug APK
+        run: |
+          set -e
+          buildozer android clean
+          buildozer android debug
+
+      - name: Verify APK
+        run: |
+          set -e
+          test -n "$(find bin -maxdepth 1 -name '*.apk')"
+          ls -lah bin/
+
+      - name: Upload SAR VOC APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: sar-voc-apk
+          path: bin/*.apk
+          if-no-files-found: error
