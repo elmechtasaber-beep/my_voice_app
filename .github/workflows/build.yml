@@ -36,7 +36,6 @@ jobs:
       - name: Build clean debug APK
         run: |
           set -e
-          buildozer android clean
           buildozer android debug
 
       - name: Verify APK
