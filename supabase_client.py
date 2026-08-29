@@ -1,6 +1,6 @@
 import requests
 
-SUPABASE_URL = "https://kwlovnyznahfkyhvmyzv.supabase.co"
+SUPABASE_URL = "https://kwlcvnyznahfkyfvmymw.supabase.co"
 SUPABASE_KEY = "sb_publishable_pzWRXTsydWX_FoyWnF_Tmg_5VWO-vKd"
 
 AUTH_URL = f"{SUPABASE_URL}/auth/v1"
