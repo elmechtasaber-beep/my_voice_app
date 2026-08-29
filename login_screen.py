@@ -3,7 +3,7 @@ from kivy.uix.popup import Popup
 from kivy.uix.label import Label
 from kivy.clock import Clock
 
-from supabase_client import supabase
+import supabase_client as supabase
 from session_manager import save_session, load_session, clear_session
 
 
@@ -17,10 +17,14 @@ class LoginScreen(Screen):
             return
 
         try:
-            response = supabase.auth.set_session(
+            response = supabase.set_session(
                 saved["access_token"], saved["refresh_token"]
             )
-            if response and response.user:
+            if response.user:
+                save_session(
+                    response.session.access_token,
+                    response.session.refresh_token,
+                )
                 self.go_to_rooms()
         except Exception as e:
             print(f"فشلت محاولة الدخول التلقائي: {e}")
@@ -35,9 +39,7 @@ class LoginScreen(Screen):
             return
 
         try:
-            response = supabase.auth.sign_in_with_password(
-                {"email": email, "password": password}
-            )
+            response = supabase.sign_in_with_password(email, password)
             if response.user and response.session:
                 save_session(
                     response.session.access_token,
@@ -62,9 +64,7 @@ class LoginScreen(Screen):
             return
 
         try:
-            response = supabase.auth.sign_up(
-                {"email": email, "password": password}
-            )
+            response = supabase.sign_up(email, password)
             if response.user:
                 if response.session:
                     save_session(
@@ -81,7 +81,9 @@ class LoginScreen(Screen):
 
     def logout(self):
         try:
-            supabase.auth.sign_out()
+            saved = load_session()
+            if saved:
+                supabase.sign_out(saved["access_token"])
         except Exception as e:
             print(f"خطأ فـ تسجيل الخروج: {e}")
         finally:
