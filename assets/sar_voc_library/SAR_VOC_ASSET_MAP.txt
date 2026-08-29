@@ -1,0 +1,17 @@
+SAR VOC — curated asset pack
+This pack contains selected visual assets and fonts only. It does NOT contain old app layouts, Java/Kotlin code, manifests, package identifiers, or old app strings.
+
+Buckets:
+- navigation
+- gifts
+- vip_svip
+- levels_medals
+- wallet_coins
+- rooms
+- backgrounds
+- common_ui
+- fonts
+
+All copied image/font resource names are prefixed with sar_voc_.
+User-provided assets: sar_voc_app_icon.png and sar_voc_color_grid.png.
+Assets copied: 1624

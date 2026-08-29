@@ -1,11 +1,15 @@
 <RoomItem@BoxLayout>:
     orientation: "horizontal"
     size_hint_y: None
-    height: "70dp"
+    height: "86dp"
     padding: "10dp"
     spacing: "10dp"
     room_name: ""
     participant_count: 0
+    host_vip_badge: ""
+    pk_active: False
+    guard_count: 0
+    family_name: ""
     room_data: {}
 
     canvas.before:
@@ -16,15 +20,29 @@
             size: self.size
             radius: [12]
 
+    Image:
+        source: "assets/sar_voc_library/drawable-xhdpi-v4/sar_voc_app_tab_party_ic.png"
+        size_hint_x: None
+        width: "40dp"
+
     BoxLayout:
         orientation: "vertical"
-        Label:
-            text: root.room_name
-            font_size: "18sp"
-            halign: "left"
-            valign: "middle"
-            text_size: self.size
-            bold: True
+        BoxLayout:
+            orientation: "horizontal"
+            spacing: "6dp"
+            Label:
+                text: root.room_name
+                font_size: "18sp"
+                halign: "left"
+                valign: "middle"
+                text_size: self.size
+                bold: True
+            Image:
+                source: root.host_vip_badge
+                opacity: 1 if root.host_vip_badge else 0
+                size_hint_x: None
+                width: "40dp" if root.host_vip_badge else 0
+                allow_stretch: True
         Label:
             text: f"👤 {root.participant_count} مشارك"
             font_size: "13sp"
@@ -32,6 +50,37 @@
             valign: "middle"
             text_size: self.size
             color: 0.7, 0.7, 0.7, 1
+
+        BoxLayout:
+            orientation: "horizontal"
+            spacing: "6dp"
+            size_hint_y: None
+            height: "18dp"
+            Label:
+                text: "⚔️ PK نشطة" if root.pk_active else ""
+                font_size: "11sp"
+                color: .9, .3, .3, 1
+                halign: "left"
+                valign: "middle"
+                text_size: self.size
+                size_hint_x: None
+                width: self.texture_size[0]
+            Label:
+                text: f"🛡️ {root.guard_count}" if root.guard_count else ""
+                font_size: "11sp"
+                color: .6, .8, 1, 1
+                halign: "left"
+                valign: "middle"
+                text_size: self.size
+                size_hint_x: None
+                width: self.texture_size[0]
+            Label:
+                text: f"👪 {root.family_name}" if root.family_name else ""
+                font_size: "11sp"
+                color: .85, .65, .15, 1
+                halign: "left"
+                valign: "middle"
+                text_size: self.size
 
     Button:
         text: "دخول"
@@ -64,6 +113,16 @@
                 width: "120dp"
                 on_release: app.root.current = "wallet"
             Button:
+                text: "👪 العائلة"
+                size_hint_x: None
+                width: "110dp"
+                on_release: app.root.current = "family"
+            Button:
+                text: "👤 البروفايل"
+                size_hint_x: None
+                width: "120dp"
+                on_release: app.root.current = "profile"
+            Button:
                 text: "خروج"
                 size_hint_x: None
                 width: "80dp"
@@ -73,7 +132,7 @@
             id: rooms_rv
             viewclass: "RoomItem"
             RecycleBoxLayout:
-                default_size: None, dp(70)
+                default_size: None, dp(86)
                 default_size_hint: 1, None
                 size_hint_y: None
                 height: self.minimum_height

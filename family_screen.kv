@@ -1,0 +1,125 @@
+<FamilyMemberItem@BoxLayout>:
+    size_hint_y: None
+    height: "46dp"
+    padding: "8dp"
+    spacing: "8dp"
+    member_role: ""
+    contribution: "0"
+    rank_badge: ""
+    member_user_id: ""
+    can_manage: False
+    is_currently_manager: False
+
+    Image:
+        source: "assets/sar_voc_library/drawable-xhdpi-v4/sar_voc_ic_family_member.webp"
+        size_hint_x: None
+        width: "28dp"
+
+    Image:
+        source: root.rank_badge
+        opacity: 1 if root.rank_badge else 0
+        size_hint_x: None
+        width: "26dp" if root.rank_badge else 0
+
+    Label:
+        text: root.member_role
+        halign: "left"
+        valign: "middle"
+        text_size: self.size
+
+    Label:
+        text: f"مساهمة: {root.contribution}"
+        halign: "right"
+        valign: "middle"
+        text_size: self.size
+        color: .6, .5, .2, 1
+
+    Button:
+        text: "⬇️" if root.is_currently_manager else "⬆️"
+        size_hint_x: None
+        width: "36dp" if root.can_manage else 0
+        opacity: 1 if root.can_manage else 0
+        disabled: not root.can_manage
+        on_release: app.root.get_screen("family").toggle_manager(root.member_user_id, root.is_currently_manager)
+
+    Button:
+        text: "🚫"
+        size_hint_x: None
+        width: "36dp" if root.can_manage else 0
+        opacity: 1 if root.can_manage else 0
+        disabled: not root.can_manage
+        on_release: app.root.get_screen("family").kick_member(root.member_user_id)
+
+
+<FamilyScreen>:
+    BoxLayout:
+        orientation: "vertical"
+        padding: "14dp"
+        spacing: "10dp"
+
+        BoxLayout:
+            size_hint_y: None
+            height: "50dp"
+            spacing: "8dp"
+            Image:
+                source: "assets/sar_voc_library/drawable-xhdpi-v4/sar_voc_profile_family_entry_ic.webp"
+                size_hint_x: None
+                width: "40dp"
+            Label:
+                text: "العائلة"
+                font_size: "22sp"
+                bold: True
+            Button:
+                text: "🏆 الأسبوعي"
+                size_hint_x: None
+                width: "90dp"
+                on_release: root.open_weekly_leaderboard()
+            Button:
+                text: "🔙"
+                size_hint_x: None
+                width: "50dp"
+                on_release: app.root.current = "rooms"
+
+        Label:
+            id: family_name_label
+            text: "جاري التحميل…"
+            font_size: "15sp"
+            bold: True
+            size_hint_y: None
+            height: "34dp"
+
+        BoxLayout:
+            size_hint_y: None
+            height: "48dp"
+            spacing: "8dp"
+            Button:
+                text: "+ إنشاء عائلة"
+                on_release: root.open_create_popup()
+            Button:
+                text: "🔗 انضمام"
+                on_release: root.open_join_popup()
+            Button:
+                text: "🚪 خروج من العائلة"
+                on_release: root.leave_family()
+
+        BoxLayout:
+            id: manage_bar
+            size_hint_y: None
+            height: "42dp" if self.opacity else 0
+            opacity: 0
+            disabled: True
+            spacing: "8dp"
+            Button:
+                text: "👑 تحويل الملكية"
+                on_release: root.open_transfer_popup()
+
+        RecycleView:
+            id: members_rv
+            viewclass: "FamilyMemberItem"
+            RecycleBoxLayout:
+                default_size: None, dp(46)
+                default_size_hint: 1, None
+                size_hint_y: None
+                height: self.minimum_height
+                orientation: "vertical"
+                spacing: "4dp"

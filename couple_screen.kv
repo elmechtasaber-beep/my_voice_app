@@ -1,0 +1,86 @@
+<CoupleScreen>:
+    FloatLayout:
+        Image:
+            source: "assets/sar_voc_library/drawable-xhdpi-v4/sar_voc_couple_entry_bg.webp"
+            allow_stretch: True
+            size: self.parent.size
+            pos: self.parent.pos
+
+        BoxLayout:
+            orientation: "vertical"
+            padding: "18dp"
+            spacing: "10dp"
+            size_hint: 0.9, 0.72
+            pos_hint: {"center_x": 0.5, "center_y": 0.5}
+            canvas.before:
+                Color:
+                    rgba: 0, 0, 0, 0.5
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: [16]
+
+            BoxLayout:
+                size_hint_y: None
+                height: "46dp"
+                Image:
+                    source: "assets/sar_voc_library/drawable-xhdpi-v4/sar_voc_couple_love_mic_heart_ic.webp"
+                    size_hint_x: None
+                    width: "34dp"
+                Label:
+                    text: "الزوجين"
+                    font_size: "22sp"
+                    bold: True
+                    color: 1, 1, 1, 1
+                Button:
+                    text: "🔙"
+                    size_hint_x: None
+                    width: "50dp"
+                    on_release: app.root.current = "rooms"
+
+            Label:
+                id: status_label
+                text: "جاري التحميل…"
+                color: 1, 1, 1, 1
+                font_size: "15sp"
+
+            Label:
+                id: task_label
+                text: ""
+                color: .9, .8, .5, 1
+                font_size: "13sp"
+                size_hint_y: None
+                height: "24dp" if self.text else 0
+
+            Button:
+                text: "💌 اقتراح ارتباط"
+                size_hint_y: None
+                height: "46dp"
+                on_release: root.open_propose_popup()
+
+            BoxLayout:
+                id: active_bar
+                orientation: "vertical"
+                spacing: "8dp"
+                size_hint_y: None
+                height: "104dp" if self.opacity else 0
+                opacity: 0
+                disabled: True
+
+                Button:
+                    text: "🎁 خذ مكافأة المهمة اليومية"
+                    size_hint_y: None
+                    height: "42dp"
+                    on_release: root.claim_daily_reward()
+
+                Button:
+                    text: "🎂 خذ جائزة الذكرى السنوية"
+                    size_hint_y: None
+                    height: "42dp"
+                    on_release: root.claim_anniversary()
+
+                Button:
+                    text: "💔 فك الارتباط"
+                    size_hint_y: None
+                    height: "42dp"
+                    on_release: root.break_up()

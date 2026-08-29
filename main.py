@@ -13,11 +13,19 @@ def _run_real_app():
     from rooms_screen import RoomsScreen
     from voice_room_screen import VoiceRoomScreen
     from wallet_screen import WalletScreen
+    from family_screen import FamilyScreen
+    from guard_screen import GuardScreen
+    from couple_screen import CoupleScreen
+    from profile_screen import ProfileScreen
 
     Builder.load_file("login_screen.kv")
     Builder.load_file("rooms_screen.kv")
     Builder.load_file("voice_room_screen.kv")
     Builder.load_file("wallet_screen.kv")
+    Builder.load_file("family_screen.kv")
+    Builder.load_file("guard_screen.kv")
+    Builder.load_file("couple_screen.kv")
+    Builder.load_file("profile_screen.kv")
 
     class SARVOCApp(App):
         def build(self):
@@ -26,6 +34,10 @@ def _run_real_app():
             sm.add_widget(RoomsScreen(name="rooms"))
             sm.add_widget(VoiceRoomScreen(name="voice_room"))
             sm.add_widget(WalletScreen(name="wallet"))
+            sm.add_widget(FamilyScreen(name="family"))
+            sm.add_widget(GuardScreen(name="guard"))
+            sm.add_widget(CoupleScreen(name="couple"))
+            sm.add_widget(ProfileScreen(name="profile"))
             sm.current = "login"
             return sm
 

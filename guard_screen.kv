@@ -1,0 +1,110 @@
+<GuardItem@BoxLayout>:
+    size_hint_y: None
+    height: "52dp"
+    padding: "6dp"
+    spacing: "8dp"
+    guard_tier: ""
+    guard_expires: ""
+    guard_perks: ""
+
+    Image:
+        source: "assets/sar_voc_library/drawable-xhdpi-v4/sar_voc_guard_treasure_avatar_frame_ic.webp"
+        size_hint_x: None
+        width: "26dp"
+
+    BoxLayout:
+        orientation: "vertical"
+        Label:
+            text: root.guard_tier
+            halign: "left"
+            valign: "middle"
+            text_size: self.size
+        Label:
+            text: root.guard_perks
+            font_size: "11sp"
+            color: .5, .8, .6, 1
+            halign: "left"
+            valign: "middle"
+            text_size: self.size
+
+    Label:
+        text: f"حتى {root.guard_expires}"
+        halign: "right"
+        valign: "middle"
+        text_size: self.size
+        color: .6, .6, .6, 1
+
+
+<GuardScreen>:
+    BoxLayout:
+        orientation: "vertical"
+        padding: "14dp"
+        spacing: "10dp"
+        canvas.before:
+            Color:
+                rgba: 0.08, 0.08, 0.12, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        BoxLayout:
+            size_hint_y: None
+            height: "50dp"
+            spacing: "8dp"
+            Image:
+                source: "assets/sar_voc_library/drawable-xhdpi-v4/sar_voc_guard_treasure_official_ic.webp"
+                size_hint_x: None
+                width: "36dp"
+            Label:
+                id: host_label
+                text: "حراسة"
+                font_size: "19sp"
+                bold: True
+                color: 1, 1, 1, 1
+            Button:
+                text: "🔙"
+                size_hint_x: None
+                width: "50dp"
+                on_release: app.root.current = "voice_room"
+
+        Label:
+            id: my_discount_label
+            text: ""
+            color: .5, .9, .6, 1
+            bold: True
+            size_hint_y: None
+            height: "24dp" if self.text else 0
+
+        BoxLayout:
+            size_hint_y: None
+            height: "90dp"
+            spacing: "8dp"
+            Button:
+                text: "🥉 برونزي\n500K/شهر\nخصم 3%"
+                font_size: "11sp"
+                on_release: root.buy_tier("bronze", 500000)
+            Button:
+                text: "🥈 فضي\n2M/شهر\nخصم 6% + حماية"
+                font_size: "11sp"
+                on_release: root.buy_tier("silver", 2000000)
+            Button:
+                text: "🥇 ذهبي\n8M/شهر\nخصم 10% + حماية"
+                font_size: "11sp"
+                on_release: root.buy_tier("gold", 8000000)
+
+        Label:
+            text: "الحراس الحاليين"
+            color: 1, 1, 1, 1
+            bold: True
+            size_hint_y: None
+            height: "28dp"
+
+        RecycleView:
+            id: guards_rv
+            viewclass: "GuardItem"
+            RecycleBoxLayout:
+                default_size: None, dp(52)
+                default_size_hint: 1, None
+                size_hint_y: None
+                height: self.minimum_height
+                orientation: "vertical"
