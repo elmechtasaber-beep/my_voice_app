@@ -4,8 +4,8 @@ from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.gridlayout import GridLayout
 
-from supabase_client import supabase
-from realtime_helper import subscribe_postgres, unsubscribe_channel
+import supabase_client as supabase
+from session_manager import load_session
 
 FRUITS = [
     ("🍓", "strawberry", "45×"), ("🥭", "mango", "25×"),
@@ -24,12 +24,10 @@ class FruitGamePanel(BoxLayout):
                          height=330, **kwargs)
         self.room_id = None
         self.round_id = None
-        self.round_channel = None
-        self.bet_channel = None
-        self.winner_channel = None
         self.selected_bet = BET_AMOUNTS[0]
         self.round_no = None
         self.timer_event = None
+        self.poll_event = None
         self.timer_label = Label(text="بانتظار الجولة…", size_hint_y=None, height=28)
         self.add_widget(self.timer_label)
 
@@ -65,9 +63,14 @@ class FruitGamePanel(BoxLayout):
 
     @staticmethod
     def format_amount(n):
+        n = int(n)
         if n >= 1000000:
             return f"{n // 1000000}M"
         return f"{n // 1000}K"
+
+    def get_access_token(self):
+        saved = load_session()
+        return saved["access_token"] if saved else None
 
     def select_bet(self, amount):
         self.selected_bet = amount
@@ -77,6 +80,7 @@ class FruitGamePanel(BoxLayout):
         self.room_id = room_id
         self.show()
         self.load_current_round()
+        self.start_polling()
 
     def hide(self):
         self.opacity = 0
@@ -89,14 +93,20 @@ class FruitGamePanel(BoxLayout):
     def load_current_round(self):
         if not self.room_id:
             return
+        token = self.get_access_token()
+        if not token:
+            return
         try:
-            r = (supabase.table("fruit_rounds").select("*")
-                 .eq("room_id", self.room_id).eq("status", "open")
-                 .order("round_no", desc=True).limit(1).execute())
-            rows = r.data or []
+            data, _, status = supabase.select(
+                "fruit_rounds", token,
+                select_cols="*",
+                filters=f"room_id=eq.{self.room_id}&status=eq.open",
+                order="round_no.desc",
+                limit=1,
+            )
+            rows = data or []
             if rows:
                 self.apply_round(rows[0])
-                self.start_realtime()
             else:
                 self.timer_label.text = "بانتظار السيرفر لفتح الجولة…"
         except Exception as e:
@@ -104,69 +114,70 @@ class FruitGamePanel(BoxLayout):
             print(f"Fruit round load error: {e}")
 
     def apply_round(self, row):
-        self.round_id = row.get("id")
+        new_round_id = row.get("id")
+        round_changed = new_round_id != self.round_id
+        self.round_id = new_round_id
         self.round_no = row.get("round_no")
         self.timer_label.text = f"الجولة {self.round_no} • 30 ثانية"
         self.load_history()
-        self.start_timer(row.get("ends_at"))
+        self.load_winners()
+        if round_changed:
+            self.start_timer()
 
-    def start_timer(self, ends_at):
+    def start_timer(self):
         if self.timer_event:
             self.timer_event.cancel()
-        # Server timestamp parsing is kept simple; realtime round update will also close it.
         self.timer_label.text = "الجولة مفتوحة • 30 ثانية"
         self.timer_event = Clock.schedule_once(lambda *_: self.load_current_round(), 30)
 
     def place_bet(self, fruit):
         if not self.round_id or self.disabled:
             return
+        token = self.get_access_token()
+        if not token:
+            return
         try:
-            result = supabase.rpc("place_fruit_bet", {
+            result = supabase.rpc("place_fruit_bet", token, {
                 "p_room_id": self.room_id,
                 "p_round_id": self.round_id,
                 "p_fruit": fruit,
                 "p_coin_amount": self.selected_bet,
-            }).execute()
-            if result.data:
+            })
+            if result:
                 self.load_history()
         except Exception as e:
             self.timer_label.text = "الرصيد غير كافٍ أو انتهت الجولة"
             print(f"Fruit bet error: {e}")
 
     def load_history(self):
+        token = self.get_access_token()
+        if not self.round_id or not token:
+            return
         try:
-            r = (supabase.table("fruit_bets").select("fruit,coin_amount,created_at")
-                 .eq("round_id", self.round_id).order("created_at", desc=True).limit(8).execute())
-            labels = [f"{x.get('fruit')} {self.format_amount(int(x.get('coin_amount', 0)))}" for x in (r.data or [])]
+            data, _, status = supabase.select(
+                "fruit_bets", token,
+                select_cols="fruit,coin_amount,created_at",
+                filters=f"round_id=eq.{self.round_id}",
+                order="created_at.desc",
+                limit=8,
+            )
+            labels = [f"{x.get('fruit')} {self.format_amount(x.get('coin_amount', 0))}" for x in (data or [])]
             self.history.text = "  •  ".join(labels) if labels else "-  -  -  -"
         except Exception as e:
             print(f"Fruit history error: {e}")
 
-    def start_realtime(self):
-        self.stop_realtime()
-        try:
-            self.round_channel = supabase.channel(f"fruit-round-{self.room_id}")
-            subscribe_postgres(self.round_channel, "*", "public", "fruit_rounds",
-                               lambda payload: Clock.schedule_once(lambda *_: self.load_current_round(), 0),
-                               filter_value=f"room_id=eq.{self.room_id}")
-            self.bet_channel = supabase.channel(f"fruit-bets-{self.room_id}")
-            subscribe_postgres(self.bet_channel, "*", "public", "fruit_bets",
-                               lambda payload: Clock.schedule_once(lambda *_: self.load_history(), 0),
-                               filter_value=f"room_id=eq.{self.room_id}")
-            self.winner_channel = supabase.channel(f"fruit-winners-{self.room_id}")
-            subscribe_postgres(self.winner_channel, "*", "public", "fruit_round_winners",
-                               lambda payload: Clock.schedule_once(lambda *_: self.load_winners(), 0),
-                               filter_value=f"room_id=eq.{self.room_id}")
-        except Exception as e:
-            print(f"Fruit realtime error: {e}")
-
     def load_winners(self):
-        if not self.round_id:
+        token = self.get_access_token()
+        if not self.round_id or not token:
             return
         try:
-            r = (supabase.table("fruit_round_winners").select("rank,user_id,bet_amount,payout,balance_after")
-                 .eq("round_id", self.round_id).order("rank").execute())
-            rows = r.data or []
+            data, _, status = supabase.select(
+                "fruit_round_winners", token,
+                select_cols="rank,user_id,bet_amount,payout,balance_after",
+                filters=f"round_id=eq.{self.round_id}",
+                order="rank.asc",
+            )
+            rows = data or []
             self.winners.text = "\n".join(
                 f"#{x['rank']}  {str(x['user_id'])[:8]}…  رهان {self.format_amount(x['bet_amount'])}  +{self.format_amount(x['payout'])}"
                 for x in rows
@@ -174,14 +185,17 @@ class FruitGamePanel(BoxLayout):
         except Exception as e:
             print(f"Fruit winners error: {e}")
 
-    def stop_realtime(self):
-        for ch in (self.round_channel, self.bet_channel, self.winner_channel):
-            if ch:
-                unsubscribe_channel(ch)
-        self.round_channel = self.bet_channel = self.winner_channel = None
+    def start_polling(self):
+        self.stop_polling()
+        self.poll_event = Clock.schedule_interval(lambda dt: self.load_current_round(), 3)
+
+    def stop_polling(self):
+        if self.poll_event:
+            self.poll_event.cancel()
+            self.poll_event = None
 
     def cleanup(self):
-        self.stop_realtime()
+        self.stop_polling()
         if self.timer_event:
             self.timer_event.cancel()
             self.timer_event = None
