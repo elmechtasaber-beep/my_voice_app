@@ -5,7 +5,9 @@ from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 from kivy.uix.button import Button
 from kivy.core.clipboard import Clipboard
-from supabase_client import supabase
+
+import supabase_client as supabase
+from session_manager import load_session
 
 
 USDT_ADDRESS = "0xefb1b6f3496c6b2a90d6ad80de88139eeb00769a"
@@ -20,28 +22,40 @@ PACKAGES = [
     (1000, 3500000000),
 ]
 
+
 class WalletScreen(Screen):
     selected_package = None
 
     def on_enter(self):
         self.refresh()
 
+    def get_access_token(self):
+        saved = load_session()
+        return saved["access_token"] if saved else None
+
     def user_id(self):
+        token = self.get_access_token()
+        if not token:
+            return None
         try:
-            session = supabase.auth.get_session()
-            return session.user.id if session and session.user else None
+            return supabase.get_user(token).id
         except Exception:
             return None
 
     def refresh(self):
         uid = self.user_id()
-        if not uid:
+        token = self.get_access_token()
+        if not uid or not token:
             self.ids.balance_label.text = "🪙 0"
             return
         try:
-            supabase.table("wallets").upsert({"user_id": uid}, on_conflict="user_id").execute()
-            r = supabase.table("wallets").select("balance").eq("user_id", uid).single().execute()
-            self.ids.balance_label.text = f"🪙 {int(r.data.get('balance', 0)):,}"
+            supabase.upsert("wallets", token, {"user_id": uid}, on_conflict="user_id")
+            data, _, status = supabase.select(
+                "wallets", token, select_cols="balance",
+                filters=f"user_id=eq.{uid}", single=True
+            )
+            balance = data.get("balance", 0) if data else 0
+            self.ids.balance_label.text = f"🪙 {int(balance):,}"
         except Exception as e:
             self.ids.balance_label.text = "تعذر جلب الرصيد"
             print("Wallet refresh:", e)
@@ -59,6 +73,7 @@ class WalletScreen(Screen):
 
     def create_recharge_request(self):
         uid = self.user_id()
+        token = self.get_access_token()
         if not uid or not self.selected_package:
             self.show("اختار باقة أولاً")
             return
@@ -76,11 +91,16 @@ class WalletScreen(Screen):
                 self.show("أدخل مرجع العملية")
                 return
             try:
-                result = supabase.rpc("create_recharge_request", {
+                result = supabase.rpc("create_recharge_request", token, {
                     "p_usd": dollars,
-                    "p_metadata": {"payment_reference": reference, "network": USDT_NETWORK, "payment_method": "USDT", "binance_id": BINANCE_ID},
-                }).execute()
-                if not result.data:
+                    "p_metadata": {
+                        "payment_reference": reference,
+                        "network": USDT_NETWORK,
+                        "payment_method": "USDT",
+                        "binance_id": BINANCE_ID,
+                    },
+                })
+                if not result:
                     raise RuntimeError("لم يرجع السيرفر رقم طلب الشحن")
                 popup.dismiss()
                 self.ids.status_label.text = "✅ تم إرسال طلب الشحن، في انتظار التحقق."
@@ -92,6 +112,7 @@ class WalletScreen(Screen):
 
     def send_gift_popup(self):
         uid = self.user_id()
+        token = self.get_access_token()
         if not uid:
             self.show("سجل الدخول أولاً")
             return
@@ -100,15 +121,21 @@ class WalletScreen(Screen):
         name = TextInput(hint_text="اسم الهدية", text="🎁 هدية", multiline=False, size_hint_y=None, height=45)
         value = TextInput(hint_text="قيمة الهدية بالكوينز", input_filter="int", multiline=False, size_hint_y=None, height=45)
         ok = Button(text="إرسال", size_hint_y=None, height=45)
-        for w in (receiver, name, value, ok): content.add_widget(w)
+        for w in (receiver, name, value, ok):
+            content.add_widget(w)
         popup = Popup(title="🎁 إرسال هدية", content=content, size_hint=(0.88, 0.62))
 
         def send(_):
             try:
-                rid = receiver.text.strip(); gift_name = name.text.strip() or "🎁 هدية"; amount = int(value.text)
-                result = supabase.rpc("send_gift", {"p_receiver": rid, "p_gift_name": gift_name, "p_coin_cost": amount}).execute()
+                rid = receiver.text.strip()
+                gift_name = name.text.strip() or "🎁 هدية"
+                amount = int(value.text)
+                result = supabase.rpc("send_gift", token, {
+                    "p_receiver": rid, "p_gift_name": gift_name, "p_coin_cost": amount
+                })
                 popup.dismiss()
-                self.ids.status_label.text = f"✅ تم الإرسال. مكافأة المستلم: {int(result.data.get('receiver_reward', 0)):,} كوينز"
+                reward = result.get("receiver_reward", 0) if result else 0
+                self.ids.status_label.text = f"✅ تم الإرسال. مكافأة المستلم: {int(reward):,} كوينز"
                 self.refresh()
             except Exception as e:
                 self.show(f"فشل إرسال الهدية: {e}")
@@ -117,10 +144,18 @@ class WalletScreen(Screen):
 
     def show_history(self):
         uid = self.user_id()
-        if not uid: return
+        token = self.get_access_token()
+        if not uid:
+            return
         try:
-            r = supabase.table("transactions").select("type,amount,metadata,created_at").eq("user_id", uid).order("created_at", desc=True).limit(30).execute()
-            text = "\n".join(f"{x['created_at'][:19]} | {x['type']} | {x['amount']:,}" for x in (r.data or [])) or "لا توجد عمليات"
+            data, _, status = supabase.select(
+                "transactions", token,
+                select_cols="type,amount,metadata,created_at",
+                filters=f"user_id=eq.{uid}",
+                order="created_at.desc",
+                limit=30,
+            )
+            text = "\n".join(f"{x['created_at'][:19]} | {x['type']} | {x['amount']:,}" for x in (data or [])) or "لا توجد عمليات"
             self.show(text)
         except Exception as e:
             self.show(f"تعذر جلب السجل: {e}")
