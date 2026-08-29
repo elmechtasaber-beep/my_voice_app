@@ -5,46 +5,60 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.button import Button
 from kivy.clock import Clock
 
-from supabase_client import supabase
-from realtime_helper import subscribe_postgres, unsubscribe_channel
+import supabase_client as supabase
+from session_manager import load_session
 
 
 class RoomsScreen(Screen):
-    rooms_channel = None
     refresh_event = None
 
     def on_enter(self):
         self.load_rooms()
-        self.start_realtime()
+        self.start_polling()
 
     def on_leave(self):
-        self.stop_realtime()
+        self.stop_polling()
+
+    def get_access_token(self):
+        saved = load_session()
+        return saved["access_token"] if saved else None
 
     def get_current_user(self):
+        token = self.get_access_token()
+        if not token:
+            return None
         try:
-            session = supabase.auth.get_session()
-            return session.user if session and session.user else None
+            return supabase.get_user(token)
         except Exception:
             return None
 
     def load_rooms(self):
+        token = self.get_access_token()
+        if not token:
+            return
         try:
-            response = (
-                supabase.table("rooms")
-                .select("id,room_name,host_id,created_at")
-                .order("created_at", desc=True)
-                .execute()
+            data, _, status = supabase.select(
+                "rooms", token,
+                select_cols="id,room_name,host_id,created_at",
+                order="created_at.desc",
             )
-            self.populate_ui(response.data or [])
+            if status < 400:
+                self.populate_ui(data or [])
         except Exception as e:
             print(f"خطأ فـ جلب الغرف: {e}")
 
     def get_participant_count(self, room_id):
-        if not room_id:
+        token = self.get_access_token()
+        if not room_id or not token:
             return 0
         try:
-            response = supabase.table("room_participants").select("id", count="exact").eq("room_id", room_id).execute()
-            return int(getattr(response, "count", 0) or 0)
+            _, total_count, status = supabase.select(
+                "room_participants", token,
+                select_cols="id",
+                filters=f"room_id=eq.{room_id}",
+                count=True,
+            )
+            return total_count or 0
         except Exception:
             return 0
 
@@ -58,29 +72,14 @@ class RoomsScreen(Screen):
             for room in rooms
         ]
 
-    def start_realtime(self):
-        self.stop_realtime()
-        try:
-            self.rooms_channel = supabase.channel("rooms-list")
-            subscribe_postgres(
-                self.rooms_channel,
-                "*",
-                "public",
-                "rooms",
-                lambda payload: Clock.schedule_once(lambda dt: self.load_rooms(), 0),
-            )
-        except Exception as e:
-            print(f"تعذر تشغيل Realtime للغرف: {e}")
-            # Fallback: keep the list fresh even if Realtime is unavailable.
-            self.refresh_event = Clock.schedule_interval(lambda dt: self.load_rooms(), 3)
+    def start_polling(self):
+        self.stop_polling()
+        self.refresh_event = Clock.schedule_interval(lambda dt: self.load_rooms(), 3)
 
-    def stop_realtime(self):
+    def stop_polling(self):
         if self.refresh_event:
             self.refresh_event.cancel()
             self.refresh_event = None
-        if self.rooms_channel:
-            unsubscribe_channel(self.rooms_channel)
-            self.rooms_channel = None
 
     def join_room(self, room_data):
         if not room_data:
@@ -93,7 +92,8 @@ class RoomsScreen(Screen):
 
     def create_room(self, room_name):
         user = self.get_current_user()
-        if not user:
+        token = self.get_access_token()
+        if not user or not token:
             print("خطأ: المستخدم ماشي مسجل دخول")
             return None
 
@@ -102,28 +102,19 @@ class RoomsScreen(Screen):
             return None
 
         try:
-            response = (
-                supabase.table("rooms")
-                .insert({
-                    "room_name": room_name,
-                    "host_id": user.id,
-                })
-                .execute()
-            )
+            data, status = supabase.insert("rooms", token, {
+                "room_name": room_name,
+                "host_id": user.id,
+            })
             self.load_rooms()
-            return response.data[0] if response.data else None
+            return data[0] if data else None
         except Exception as e:
             print(f"خطأ فـ إنشاء الغرفة: {e}")
             return None
 
     def open_create_room_popup(self):
         layout = BoxLayout(orientation="vertical", spacing=10, padding=10)
-        text_input = TextInput(
-            hint_text="اسم الغرفة",
-            multiline=False,
-            size_hint_y=None,
-            height=45,
-        )
+        text_input = TextInput(hint_text="اسم الغرفة", multiline=False, size_hint_y=None, height=45)
         confirm_btn = Button(text="إنشاء", size_hint_y=None, height=45)
         layout.add_widget(text_input)
         layout.add_widget(confirm_btn)
@@ -137,6 +128,6 @@ class RoomsScreen(Screen):
         popup.open()
 
     def leave_to_login(self):
-        self.stop_realtime()
+        self.stop_polling()
         login_screen = self.manager.get_screen("login")
         login_screen.logout()
